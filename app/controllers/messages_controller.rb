@@ -17,7 +17,9 @@ class MessagesController < ApplicationController
     end
 
     def create
+        # Enqueue the Sidekiq job (instant execution)
         MessageDeliveryJob.perform_later(current_user.id, params[:receiver_id], params[:content])
-        render json: { status: "Message is being processed..." }, status: :accepted
+
+        render json: { status: "Message is being processed asynchronously by Sidekiq" }, status: :accepted
     end
 end
