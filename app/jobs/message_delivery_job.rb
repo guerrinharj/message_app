@@ -9,10 +9,7 @@ class MessageDeliveryJob < ApplicationJob
 
         message = Message.create!(sender: sender, receiver: receiver, content: content)
 
-        # Ensure ActionCable is loaded before broadcasting
-        ActiveSupport::Dependencies.autoload_paths << Rails.root.join('app/channels')
-
-        # Broadcast the message via WebSocket
+        # Broadcast the message via WebSocket (ActionCable)
         ActionCable.server.broadcast("chat_#{receiver.id}", message.as_json)
     end
 end
