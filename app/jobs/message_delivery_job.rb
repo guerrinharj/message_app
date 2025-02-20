@@ -1,7 +1,7 @@
 class MessageDeliveryJob < ApplicationJob
     queue_as :default
 
-    sidekiq_options retry: false # Ensure job runs only once
+    sidekiq_options retry: false
 
     def perform(message_id)
         message = Message.find(message_id)
