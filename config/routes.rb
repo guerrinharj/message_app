@@ -17,5 +17,7 @@ Rails.application.routes.draw do
   post "/login", to: "auth#login"
   post "/signup", to: "auth#signup"
 
-  resources :messages, only: [:index, :create]
+  get "/messages/:user_id", to: "messages#index"
+  get "/messages", to: "messages#index"
+  post "/messages", to: "messages#create"
 end
