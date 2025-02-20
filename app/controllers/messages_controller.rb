@@ -31,7 +31,6 @@ class MessagesController < ApplicationController
             content: params[:content]
         )
 
-        # Attach files if provided
         if params[:files].present?
             message.files.attach(params[:files])
         end
