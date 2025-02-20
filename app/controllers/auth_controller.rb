@@ -2,7 +2,7 @@ class AuthController < ApplicationController
     skip_before_action :authenticate_user, only: [:login, :signup]
 
     def login
-        user = User.find_by(username: params[:username])
+        user = User.find_by(username: params[:username]) || User.find_by(id: params[:user_id])
 
         if user && user.authenticate(params[:password])
             token = encode_token({ user_id: user.id })
