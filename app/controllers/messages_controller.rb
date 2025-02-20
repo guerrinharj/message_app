@@ -2,15 +2,12 @@ class MessagesController < ApplicationController
     before_action :authenticate_user
 
     def index
-        # Determine the user: either from params or default to the authenticated user
         user = params[:user_id] ? User.find_by(id: params[:user_id]) : current_user
 
-        # Ensure the authenticated user can only access their own messages
         if user != current_user
             return render json: { error: "Access denied" }, status: :forbidden
         end
 
-        # Fetch messages where the user is the sender or receiver
         pagy, messages = pagy(Message.where(sender: user).or(Message.where(receiver: user)))
 
         pagination = {
@@ -22,21 +19,41 @@ class MessagesController < ApplicationController
         }
 
         render json: {
-            messages: messages.as_json,
+            messages: messages.map { |message| serialize_message(message) },
             pagination: pagination
         }
     end
 
     def create
-        message = Message.create!(
+        message = Message.new(
             sender: current_user,
             receiver_id: params[:receiver_id],
             content: params[:content]
         )
 
-        # Enqueue message processing in Sidekiq
-        MessageDeliveryJob.perform_later(current_user.id, params[:receiver_id], params[:content])
+        # Attach files if provided
+        if params[:files].present?
+            message.files.attach(params[:files])
+        end
 
-        render json: { status: "Message is being processed asynchronously by Sidekiq" }, status: :accepted
+        if message.save
+            MessageDeliveryJob.perform_later(message.id)
+            render json: serialize_message(message), status: :created
+        else
+            render json: { errors: message.errors.full_messages }, status: :unprocessable_entity
+        end
+    end
+
+    private
+
+    def serialize_message(message)
+        {
+            id: message.id,
+            sender_id: message.sender_id,
+            receiver_id: message.receiver_id,
+            content: message.content,
+            files: message.files.map { |file| url_for(file) },
+            created_at: message.created_at
+        }
     end
 end

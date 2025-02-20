@@ -3,13 +3,22 @@ class MessageDeliveryJob < ApplicationJob
 
     sidekiq_options retry: false # Ensure job runs only once
 
-    def perform(sender_id, receiver_id, content)
-        sender = User.find(sender_id)
-        receiver = User.find(receiver_id)
+    def perform(message_id)
+        message = Message.find(message_id)
+        ActionCable.server.broadcast("chat_#{message.receiver_id}", serialize_message(message))
+    end
 
-        message = Message.create!(sender: sender, receiver: receiver, content: content)
+    private
 
-        # Broadcast the message via WebSocket (ActionCable)
-        ActionCable.server.broadcast("chat_#{receiver.id}", message.as_json)
+    def serialize_message(message)
+        {
+            id: message.id,
+            sender_id: message.sender_id,
+            receiver_id: message.receiver_id,
+            content: message.content,
+            files: message.files.map { |file| Rails.application.routes.url_helpers.url_for(file) },
+            created_at: message.created_at
+        }
     end
 end
+
