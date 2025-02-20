@@ -50,7 +50,9 @@ class MessagesController < ApplicationController
         {
             id: message.id,
             sender_id: message.sender_id,
+            sender: message.sender.username,
             receiver_id: message.receiver_id,
+            receiver: message.receiver.username,
             content: message.content,
             files: message.files.map { |file| url_for(file) },
             created_at: message.created_at
